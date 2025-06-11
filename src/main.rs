@@ -4,16 +4,21 @@ fn main() {
     let args: Vec<String> = env::args().collect();
 
     if args.len() < 2 {
-        eprintln!("Usage: {} <message>", args[0]);
+        eprintln!("Usage: {} [-n] <message>", args[0]);
         std::process::exit(1);
     }
 
-    print_message(&args[1]);
+    let (no_newline, message) = parse_args(&args);
+    print_message(&message, no_newline);
 }
 
-fn print_message(message: &str) {
+fn print_message(message: &str, no_newline: bool) {
     let formatted = format_text(message);
-    println!("{}", formatted);
+    if no_newline {
+        print!("{}", formatted);
+    } else {
+        println!("{}", formatted);
+    }
 }
 
 fn format_text(input: &str) -> String {
@@ -62,6 +67,24 @@ fn format_text(input: &str) -> String {
     result
 }
 
+fn parse_args(args: &[String]) -> (bool, String) {
+    let mut no_newline = false;
+    let mut message_parts = Vec::new();
+    let mut i = 1; // Skip program name
+
+    while i < args.len() {
+        if args[i] == "-n" {
+            no_newline = true;
+        } else {
+            message_parts.push(args[i].clone());
+        }
+        i += 1;
+    }
+
+    let message = message_parts.join(" ");
+    (no_newline, message)
+}
+
 fn apply_formatting(format_spec: &str, text: &str) -> String {
     let mut ansi_codes = Vec::new();
     let formats: Vec<&str> = format_spec.split_whitespace().collect();
@@ -108,7 +131,7 @@ mod tests {
     fn test_print_message() {
         // This test verifies that print_message works with a given string
         // Since println! doesn't return a value, we just call it and ensure no panic occurs
-        print_message("test message");
+        print_message("test message", false);
     }
 
     #[test]
@@ -151,5 +174,38 @@ mod tests {
         let input = "This has {no colon} and {unclosed brace and normal text";
         let expected = "This has {no colon} and {unclosed brace and normal text";
         assert_eq!(format_text(input), expected);
+    }
+
+    #[test]
+    fn test_parse_args_no_flags() {
+        let args = vec!["program".to_string(), "hello world".to_string()];
+        let (no_newline, message) = parse_args(&args);
+        assert!(!no_newline);
+        assert_eq!(message, "hello world");
+    }
+
+    #[test]
+    fn test_parse_args_with_n_flag() {
+        let args = vec![
+            "program".to_string(),
+            "-n".to_string(),
+            "hello world".to_string(),
+        ];
+        let (no_newline, message) = parse_args(&args);
+        assert!(no_newline);
+        assert_eq!(message, "hello world");
+    }
+
+    #[test]
+    fn test_parse_args_message_with_spaces() {
+        let args = vec![
+            "program".to_string(),
+            "-n".to_string(),
+            "hello".to_string(),
+            "world".to_string(),
+        ];
+        let (no_newline, message) = parse_args(&args);
+        assert!(no_newline);
+        assert_eq!(message, "hello world");
     }
 }
