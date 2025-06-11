@@ -1,0 +1,8 @@
+#!/bin/bash
+
+set -e
+
+bin/dev/update
+bin/dev/format
+cargo test
+git push
