@@ -10,13 +10,13 @@ echo "This demo showcases the colorized text printing capabilities of cecho"
 echo ""
 
 # Build the project if needed
-if [ ! -f "target/release/reko" ]; then
+if [ ! -f "target/release/cecho" ]; then
     echo "Building cecho..."
     mise exec -- cargo build --release
     echo ""
 fi
 
-CECHO="./target/release/reko"
+CECHO="./target/release/cecho"
 
 echo "--- Quick Demo ---"
 echo "Here's a quick taste of what cecho can do:"
