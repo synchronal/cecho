@@ -4,11 +4,25 @@ fn main() {
     let args: Vec<String> = env::args().collect();
 
     if args.len() < 2 {
-        eprintln!("Usage: {} [-n] <message>", args[0]);
+        eprintln!("Usage: {} [-n] [-h|--help] <message>", args[0]);
         std::process::exit(1);
     }
 
+    // Check for help flag anywhere in arguments
+    for arg in &args[1..] {
+        if arg == "-h" || arg == "--help" {
+            print_help(&args[0]);
+            return;
+        }
+    }
+
     let (no_newline, message) = parse_args(&args);
+
+    if message.is_empty() {
+        eprintln!("Usage: {} [-n] [-h|--help] <message>", args[0]);
+        std::process::exit(1);
+    }
+
     print_message(&message, no_newline);
 }
 
@@ -75,6 +89,9 @@ fn parse_args(args: &[String]) -> (bool, String) {
     while i < args.len() {
         if args[i] == "-n" {
             no_newline = true;
+        } else if args[i] == "-h" || args[i] == "--help" {
+            // Help flag should have been handled in main, but skip it here too
+            // in case someone puts it after other flags
         } else {
             message_parts.push(args[i].clone());
         }
@@ -83,6 +100,97 @@ fn parse_args(args: &[String]) -> (bool, String) {
 
     let message = message_parts.join(" ");
     (no_newline, message)
+}
+
+fn print_help(program_name: &str) {
+    println!("cecho - A command-line tool for printing colorized text");
+    println!();
+    println!("USAGE:");
+    println!("    {} [OPTIONS] <message>", program_name);
+    println!();
+    println!("OPTIONS:");
+    println!("    -n              Suppress the trailing newline");
+    println!("    -h, --help      Show this help message and exit");
+    println!();
+    println!("FORMATTING:");
+    println!("    Text can be formatted using {{format: text}} syntax where 'format' can contain:");
+    println!();
+    println!("    Colors:");
+    println!("        black, blue, cyan, green, magenta, red, white, yellow");
+    println!();
+    println!("    Styles:");
+    println!("        blink, bold, dim, italic, reverse, strikethrough, underline");
+    println!();
+    println!("    Multiple formats can be combined with spaces:");
+    println!("        {{red bold: text}}    - Red and bold");
+    println!("        {{blue underline: text}} - Blue and underlined");
+    println!();
+    println!("EXAMPLES:");
+    println!("    Basic usage:");
+    println!("        {} 'Hello world!'", program_name);
+    println!();
+    println!("    Colored text:");
+    println!("        {} 'This is {{red: red text}}'", program_name);
+    println!("        {} 'Status: {{green: SUCCESS}}'", program_name);
+    println!();
+    println!("    Styled text:");
+    println!("        {} 'This is {{bold: important}}'", program_name);
+    println!("        {} 'This is {{italic: emphasized}}'", program_name);
+    println!(
+        "        {} 'This is {{underline: underlined}}'",
+        program_name
+    );
+    println!();
+    println!("    Combined formatting:");
+    println!(
+        "        {} 'This is {{red bold: very important}}'",
+        program_name
+    );
+    println!(
+        "        {} 'Warning: {{yellow bold underline: critical issue}}'",
+        program_name
+    );
+    println!();
+    println!("    Multiple formatted sections:");
+    println!(
+        "        {} 'Hello {{cyan: world}}, this is {{red: amazing}}!'",
+        program_name
+    );
+    println!(
+        "        {} 'Status: {{green: PASSED}} - {{blue: 42 tests}} completed'",
+        program_name
+    );
+    println!();
+    println!("    Log-style output:");
+    println!(
+        "        {} '[{{green: INFO}}] Application started'",
+        program_name
+    );
+    println!(
+        "        {} '[{{yellow: WARN}}] Connection timeout'",
+        program_name
+    );
+    println!(
+        "        {} '[{{red: ERROR}}] {{red bold: Critical failure}}'",
+        program_name
+    );
+    println!();
+    println!("    Suppress newline:");
+    println!("        {} -n 'Loading{{cyan: ...}}'", program_name);
+    println!();
+    println!("    Fun examples:");
+    println!(
+        "        {} 'My {{cyan: hovercraft}} is {{red underline: full of eels}}!'",
+        program_name
+    );
+    println!(
+        "        {} '🚀 {{green bold: Build Status:}} {{green: PASSED}}'",
+        program_name
+    );
+    println!(
+        "        {} '📊 Results: {{cyan: 45 passed}}, {{yellow: 2 skipped}}, {{red: 0 failed}}'",
+        program_name
+    );
 }
 
 fn apply_formatting(format_spec: &str, text: &str) -> String {
@@ -207,5 +315,44 @@ mod tests {
         let (no_newline, message) = parse_args(&args);
         assert!(no_newline);
         assert_eq!(message, "hello world");
+    }
+
+    #[test]
+    fn test_parse_args_ignores_help_flag() {
+        let args = vec![
+            "program".to_string(),
+            "-h".to_string(),
+            "hello".to_string(),
+            "world".to_string(),
+        ];
+        let (no_newline, message) = parse_args(&args);
+        assert!(!no_newline);
+        assert_eq!(message, "hello world");
+    }
+
+    #[test]
+    fn test_parse_args_ignores_help_flag_long() {
+        let args = vec![
+            "program".to_string(),
+            "--help".to_string(),
+            "hello".to_string(),
+            "world".to_string(),
+        ];
+        let (no_newline, message) = parse_args(&args);
+        assert!(!no_newline);
+        assert_eq!(message, "hello world");
+    }
+
+    #[test]
+    fn test_parse_args_mixed_flags_with_help() {
+        let args = vec![
+            "program".to_string(),
+            "-n".to_string(),
+            "--help".to_string(),
+            "hello".to_string(),
+        ];
+        let (no_newline, message) = parse_args(&args);
+        assert!(no_newline);
+        assert_eq!(message, "hello");
     }
 }
