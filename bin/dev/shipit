@@ -4,5 +4,5 @@ set -euo pipefail
 
 bin/dev/update
 bin/dev/format
-cargo test
+bin/dev/test
 git push
